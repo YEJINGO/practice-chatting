@@ -16,7 +16,7 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    @Column(name = "MEMBER_ID")
+    @Column(name = "member_id")
     private Long id;
 
     @Column(unique = true, length = 100)
@@ -24,20 +24,17 @@ public class Member {
 
     private String password;
 
-    private String slackId;
+    private String nickName;
 
     @Enumerated(value = STRING)
     private Role role;
 
-//    @OneToMany(mappedBy = "member", orphanRemoval = true)
-//    private List<Post> post = new ArrayList<>();
-
     @Builder
-    public Member(Long id, String email, String password, String slackId, Role role) {
+    public Member(Long id, String email, String password, String nickName, Role role) {
         this.id = id;
         this.email = email;
         this.password = password;
-        this.slackId = slackId;
+        this.nickName = nickName;
         this.role = role;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.daitgymchatting.chat.pubsub;
 
+import com.example.daitgymchatting.chat.dto.ChatMessageDto;
 import com.example.daitgymchatting.chat.entity.ChatMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,7 +13,11 @@ public class RedisPublisher {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public void publish(ChannelTopic topic, ChatMessage message) {
-        redisTemplate.convertAndSend(topic.getTopic(), message);
+    /**
+     * 메시지를 redis 서버로 발행
+     */
+
+    public void publish(ChannelTopic topic, ChatMessageDto chatMessageDto) {
+        redisTemplate.convertAndSend(topic.getTopic(), chatMessageDto);
     }
 }

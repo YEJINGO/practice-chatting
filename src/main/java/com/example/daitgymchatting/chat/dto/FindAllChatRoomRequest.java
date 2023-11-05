@@ -5,7 +5,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class UserInfoDto {
+public class FindAllChatRoomRequest {
+
     private String nickName;
-    private String receiver;
+
 }

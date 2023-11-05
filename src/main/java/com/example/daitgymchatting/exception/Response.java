@@ -1,4 +1,4 @@
-package com.example.daitgymchatting.chat.exception;
+package com.example.daitgymchatting.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

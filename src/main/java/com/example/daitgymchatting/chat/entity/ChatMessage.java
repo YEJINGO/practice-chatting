@@ -1,38 +1,47 @@
 package com.example.daitgymchatting.chat.entity;
 
-import com.example.daitgymchatting.chat.dto.MessageType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 import static lombok.AccessLevel.PROTECTED;
 
 @Getter
 @Setter
-@Builder
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
 public class ChatMessage {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private MessageType messageType; // 메시지 타입
-    private String sender; // 메시지 보낸사람
-    private String message; // 메시지
-    private String roomId;
+    private MessageType messageType;
+    private String sender;
+    private String message;
+    private String redisRoomId;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    private LocalDateTime createdAt;
 
+    @ManyToOne
+    @JoinColumn(name = "roomId")
+    private ChatRoom chatRoom;
 
-
-    public static ChatMessage createChatMessage(String roomId, String sender, String message,MessageType type) {
-        return ChatMessage.builder()
-                .roomId(roomId)
-                .sender(sender)
-                .message(message)
-                .messageType(type)
-                .build();
+    @Builder
+    public ChatMessage(MessageType messageType, String sender, String message, String redisRoomId) {
+        super();
+        this.messageType = messageType;
+        this.sender = sender;
+        this.message = message;
+        this.redisRoomId = redisRoomId;
+        this.createdAt = LocalDateTime.now();
     }
+
 }

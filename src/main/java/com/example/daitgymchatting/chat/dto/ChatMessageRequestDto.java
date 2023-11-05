@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class UserInfoDto {
-    private String nickName;
+public class ChatMessageRequestDto {
     private String receiver;
 }

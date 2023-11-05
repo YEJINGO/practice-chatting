@@ -1,9 +1,7 @@
 package com.example.daitgymchatting.chat.controller;
 
-import com.example.daitgymchatting.chat.dto.UserInfoDto;
-import com.example.daitgymchatting.chat.entity.ChatMessage;
-import com.example.daitgymchatting.chat.entity.ChatRoom;
-import com.example.daitgymchatting.chat.service.ChatService;
+import com.example.daitgymchatting.chat.dto.*;
+import com.example.daitgymchatting.chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -17,20 +15,37 @@ import java.util.List;
 public class ChatRoomController {
 
 
-    private final ChatService chatService;
+    private final ChatRoomService chatService;
 
+    /**
+     * 채팅방 생성
+     */
+    @PostMapping("/room")
+    public ChatRoomResponse createRoom(@RequestParam Long memberId, @RequestBody ChatMessageRequestDto chatMessageRequestDto) {
+        return chatService.createChatRoom(memberId, chatMessageRequestDto);
+    }
+
+    /**
+     * 사용자 관련 모든 채팅방 조회
+     */
     @GetMapping("/rooms")
-    public List<ChatRoom> rooms() {
-        return chatService.findAllRoom();
+    public List<ChatMessageResponseDto> findAllRoomByUser(@RequestParam Long memberId) {
+        return chatService.findAllRoomByUser(memberId);
     }
 
-    @PostMapping("/room/{roomName}")
-    public ChatRoom createRoom(@PathVariable String roomName, @RequestBody UserInfoDto userInfoDto) {
-        return chatService.createChatRoom(roomName,userInfoDto);
+    /**
+     * 사용자 관련 선택된 채팅방 조회
+     */
+    @GetMapping("/rooms/{roomId}")
+    public SelectedChatRoomResponse findRoom(@PathVariable String roomId, @RequestParam Long memberId) {
+        return chatService.findRoom(roomId, memberId);
     }
 
-    @GetMapping("/room/{roomId}")
-    public List<ChatMessage> roomChatMessage(@PathVariable String roomId) {
-        return chatService.getListResult(roomId);
-    }
+//    /**
+//     * 채팅방 삭제
+//     */
+//    @DeleteMapping("/room/{id}")
+//    public void deleteRoom(@PathVariable Long id,@RequestParam Long memberId) {
+//        chatService.deleteRoom(id,memberId);
+//    }
 }

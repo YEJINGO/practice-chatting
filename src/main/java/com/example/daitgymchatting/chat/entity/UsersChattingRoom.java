@@ -20,12 +20,12 @@ public class UsersChattingRoom {
 
     @MapsId("memberId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MEMBER_ID")
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @MapsId("roomId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CHATROOM_ID")
+    @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
     public UsersChattingRoom(UsersChattingRoomPk id) {
@@ -38,9 +38,9 @@ public class UsersChattingRoom {
     @Getter
     public static class UsersChattingRoomPk implements Serializable {
         private Long memberId;
-        private String roomId;
+        private Long roomId;
 
-        public UsersChattingRoomPk(Long memberId, String roomId) {
+        public UsersChattingRoomPk(Long memberId, Long roomId) {
             this.memberId = memberId;
             this.roomId = roomId;
         }

@@ -1,17 +1,17 @@
-//package com.example.daitgymchatting.member.repo;
-//
-//import com.example.daitgymchatting.member.entity.Member;
-//import org.springframework.data.jpa.repository.JpaRepository;
-//import org.springframework.stereotype.Repository;
-//
-//import java.util.Optional;
-//
-//@Repository
-//public interface MemberRepository extends JpaRepository<Member, Long> {
-//
-//    Optional<Member> findByEmail(String email);
-//
-//    boolean existsByEmail(String email);
-//
-//    Optional<Member> findBySlackId(String name);
-//}
+package com.example.daitgymchatting.member.repo;
+
+import com.example.daitgymchatting.member.entity.Member;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface MemberRepository extends JpaRepository<Member, Long> {
+
+    Optional<Member> findByEmail(String email);
+
+    boolean existsByEmail(String email);
+
+    Optional<Member> findByNickName(String name);
+}

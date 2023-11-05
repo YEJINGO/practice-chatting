@@ -25,7 +25,7 @@ public class SignupRequest {
     public Member toEntity(String password) {
         return Member.builder()
                 .email(this.email)
-                .slackId(this.slackId)
+                .nickName(this.slackId)
                 .password(password)
                 .role(this.role)
                 .build();

@@ -1,8 +1,12 @@
 package com.example.daitgymchatting.chat.config;
 
+import com.example.daitgymchatting.exception.chatException.StompExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -13,6 +17,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 @EnableWebSocketMessageBroker
 public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
+    private final StompHandler stompHandler;
+    private final StompExceptionHandler stompExceptionHandler;
+
 
     /**
      * 서버와 처음 연결해주는 부분
@@ -21,7 +28,11 @@ public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOrigins("*");
+        registry
+                .setErrorHandler(stompExceptionHandler)
+                .addEndpoint("/ws")
+                .setAllowedOrigins("*")
+                .withSockJS();
     }
 
     /**
@@ -35,6 +46,11 @@ public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/sub");
-        registry.setApplicationDestinationPrefixes("/api/chat");
+        registry.setApplicationDestinationPrefixes("/pub/chat");
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompHandler);
     }
 }
