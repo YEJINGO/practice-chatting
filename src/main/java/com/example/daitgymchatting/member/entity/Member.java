@@ -26,15 +26,18 @@ public class Member {
 
     private String nickName;
 
+    private String imageUrl;
+
     @Enumerated(value = STRING)
     private Role role;
 
     @Builder
-    public Member(Long id, String email, String password, String nickName, Role role) {
+    public Member(Long id, String email, String password, String nickName, String imageUrl, Role role) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.nickName = nickName;
+        this.imageUrl = imageUrl;
         this.role = role;
     }
 }

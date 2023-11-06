@@ -10,23 +10,27 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SignupRequest {
     private String email;
-    private String slackId;
+    private String nickName;
     private String password;
+    private String imageUrl;
+
     private Role role;
 
     @Builder
-    public SignupRequest(String email, String slackId, String password, Role role) {
+    public SignupRequest(String email, String nickName, String password, String imageUrl, Role role) {
         this.email = email;
-        this.slackId = slackId;
+        this.nickName = nickName;
         this.password = password;
+        this.imageUrl = imageUrl;
         this.role = role;
     }
 
     public Member toEntity(String password) {
         return Member.builder()
                 .email(this.email)
-                .nickName(this.slackId)
+                .nickName(this.nickName)
                 .password(password)
+                .imageUrl(imageUrl)
                 .role(this.role)
                 .build();
     }

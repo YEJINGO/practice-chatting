@@ -2,10 +2,13 @@ package com.example.daitgymchatting.chat.service;
 
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
 import com.example.daitgymchatting.chat.entity.ChatMessage;
+import com.example.daitgymchatting.chat.entity.MessageType;
+import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
 import com.example.daitgymchatting.chat.repo.ChatMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +22,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class ChatMessageService {
-    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
+
     private final ChatMessageRepository messageRepository;
+    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
 
 
     public void save(ChatMessageDto chatMessageDto) {
@@ -67,23 +71,33 @@ public class ChatMessageService {
 
         ChatMessageDto latestMessage = redisTemplateMessage.opsForList().index(roomId, -1);
 
+
         if (latestMessage == null) {
             ChatMessage dbLatestMessage = messageRepository.findTop1ByRedisRoomIdOrderByCreatedAtDesc(roomId);
+
 
             if (dbLatestMessage != null) {
                 latestMessage = new ChatMessageDto(dbLatestMessage); // ChatMessage를 ChatMessageDto로 변환
                 redisTemplateMessage.opsForList().rightPush(roomId, latestMessage);
-            }
-        }
-        LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime messageCreatedAt = latestMessage.getCreatedAt();
-        Duration timeDifference = Duration.between(messageCreatedAt, currentTime);
+                LocalDateTime currentTime = LocalDateTime.now();
+                LocalDateTime messageCreatedAt = latestMessage.getCreatedAt();
+                Duration timeDifference = Duration.between(messageCreatedAt, currentTime);
 
-        // 날짜 및 시간 차이를 ChatMessageDto에 설정
-        latestMessage.setTimeDifference(timeDifference);
+                // 날짜 및 시간 차이를 ChatMessageDto에 설정
+                latestMessage.setTimeDifference(timeDifference);
+            }
+        } else {
+            LocalDateTime currentTime = LocalDateTime.now();
+            LocalDateTime messageCreatedAt = latestMessage.getCreatedAt();
+            Duration timeDifference = Duration.between(messageCreatedAt, currentTime);
+
+            // 날짜 및 시간 차이를 ChatMessageDto에 설정
+            latestMessage.setTimeDifference(timeDifference);
+        }
 
         return latestMessage;
     }
 
 
 }
+
