@@ -37,8 +37,8 @@ public class ChatMessageController {
         chatMessageDto.setCreatedAt(LocalDateTime.now());
 
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
-        redisPublisher.publish(topic, chatMessageDto);
-        messageService.save(chatMessageDto);
+        ChatMessageDto cmd = messageService.save(chatMessageDto);
+        redisPublisher.publish(topic, cmd);
     }
 
 //       @MessageMapping("/message")

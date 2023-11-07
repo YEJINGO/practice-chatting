@@ -36,7 +36,7 @@ public class ChatMessageService {
      * 2. rightPush: redis 저장
      * 3. expire: Key값 만료시키기 : 1시간마다 삭제
      */
-    public void save(ChatMessageDto chatMessageDto) {
+    public ChatMessageDto save(ChatMessageDto chatMessageDto) {
         ChatRoom chatroom = chatRoomRepository.findByRedisRoomId(chatMessageDto.getRedisRoomId());
         ChatMessage chatMessage = ChatMessage.builder()
                 .messageType(chatMessageDto.getMessageType())
@@ -46,9 +46,11 @@ public class ChatMessageService {
                 .redisRoomId(chatMessageDto.getRedisRoomId())
                 .build();
         chatMessageRepository.save(chatMessage);
-        redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
-        redisTemplateMessage.opsForList().rightPush(chatMessage.getRedisRoomId(), chatMessageDto);
-        redisTemplateMessage.expire(chatMessage.getRedisRoomId(), 60, TimeUnit.MINUTES);
+        chatMessageDto.setChatMessageId(chatMessage.getId());
+        chatMessageDto.setReadCount(2);
+
+
+        return chatMessageDto;
     }
 
     /**
@@ -90,8 +92,11 @@ public class ChatMessageService {
         Iterator<ChatMessageDto> iterator = modifiedChatMessageDtos.iterator();
         while (iterator.hasNext()) {
             ChatMessageDto chatMessageDto = iterator.next();
-            if (chatMessageDto.getReadCount() == 1) {
-                chatMessageDto.setReadCount(-1);
+            if (!member.getNickName().equals(chatMessageDto.getSender())) {
+                if (chatMessageDto.getReadCount() == 1) {
+                    chatMessageDto.setReadCount(chatMessageDto.getReadCount() - 1);
+                    // TODO redis 저장, rdb 저장
+                }
             }
         }
 

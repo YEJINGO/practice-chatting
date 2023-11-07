@@ -49,7 +49,7 @@ public class ChatMessage {
 
 
     public int setReadCount() {
-        return readCount--;
+        return --readCount;
     }
 
 }
