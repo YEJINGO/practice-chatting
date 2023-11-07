@@ -20,25 +20,37 @@ import java.time.LocalDateTime;
 public class ChatMessageDto {
 
     private MessageType messageType;
+    private Long chatMessageId;
     private String sender;
     private String message;
     private String redisRoomId;
+    private int readCount;
 
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
     private Duration timeDifference;
 
-    @Builder
+
     public ChatMessageDto(ChatMessage chatMessage) {
+        this.chatMessageId = chatMessage.getId();
         this.redisRoomId = chatMessage.getRedisRoomId();
         this.messageType = chatMessage.getMessageType();
         this.sender = chatMessage.getSender();
         this.message = chatMessage.getMessage();
+        this.readCount = chatMessage.getReadCount();
         this.createdAt = LocalDateTime.now();
     }
 
-    public void setTimeDifference(Duration timeDifference) {
-        this.timeDifference = timeDifference;
+    @Builder
+    public ChatMessageDto(MessageType messageType, String redisRoomId, String sender, String message) {
+        this.messageType = messageType;
+        this.redisRoomId = redisRoomId;
+        this.sender = sender;
+        this.message = message;
+    }
+
+    public void setReadCount(int readCount) {
+        this.readCount = readCount;
     }
 }

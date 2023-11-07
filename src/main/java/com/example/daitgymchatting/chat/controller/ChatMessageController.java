@@ -33,27 +33,38 @@ public class ChatMessageController {
     @MessageMapping("/message")
     public void message(ChatMessageDto chatMessageDto) {
         log.info("채팅 메시지");
-        if (MessageType.ENTER.equals(chatMessageDto.getMessageType())) {
-            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
-            chatMessageDto.setMessage("[알림]");
-            chatMessageDto.setMessage(chatMessageDto.getSender() + "님이 입장하셨습니다.");
-        } else if (MessageType.TALK.equals(chatMessageDto.getMessageType())) {
-            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
-        }
-
+        chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
         chatMessageDto.setCreatedAt(LocalDateTime.now());
 
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
         redisPublisher.publish(topic, chatMessageDto);
         messageService.save(chatMessageDto);
-
     }
 
-    /**
-     * 대화 내역 조회
-     */
-    @GetMapping("/room/{roomId}/message")
-    public List<ChatMessageDto> loadMessage(@PathVariable String roomId) {
-        return messageService.loadMessage(roomId);
+//       @MessageMapping("/message")
+//    public void message(ChatMessageDto chatMessageDto) {
+//        log.info("채팅 메시지");
+//
+//        if (MessageType.ENTER.equals(chatMessageDto.getMessageType())) {
+//            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
+//            chatMessageDto.setMessage("[알림]");
+//            chatMessageDto.setMessage(chatMessageDto.getSender() + "님이 입장하셨습니다.");
+//        } else if (MessageType.TALK.equals(chatMessageDto.getMessageType())) {
+//            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
+//        }
+//
+//        chatMessageDto.setCreatedAt(LocalDateTime.now());
+//
+//        ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
+//        redisPublisher.publish(topic, chatMessageDto);
+//        messageService.save(chatMessageDto);
+//
+//    }
+//        /**
+//         * 대화 내역 조회
+//         */
+//        @GetMapping("/room/{roomId}/message")
+//        public List<ChatMessageDto> loadMessage (@PathVariable String roomId){
+//            return messageService.loadMessage(roomId);
+//        }
     }
-}

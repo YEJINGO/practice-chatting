@@ -11,17 +11,11 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, String> {
 
-//    @Query("select c from ChatRoom c where c.id=:id")
-//    Optional<ChatRoom> findByChatRoomId(@Param("id") String id);
-
     @Query("SELECT cr FROM ChatRoom cr WHERE (cr.sender = :nickName OR cr.receiver = :nickName)")
     List<ChatRoom> findBySenderOrReceiver(String nickName);
     ChatRoom findBySenderAndReceiver(String nickName, String receiver);
 
-    ChatRoom findByIdAndSenderAndReceiver(Long id, String nickName, String receiver);
-
-
     ChatRoom findByRedisRoomIdAndSenderOrRedisRoomIdAndReceiver(String roomId, String sender, String roomId1, String nickName);
 
-    ChatRoom findByIdAndMemberIdOrIdAndReceiver(Long id, Long id1, Long id2, String nickName);
+    ChatRoom findByRedisRoomId(String redisRoomId);
 }

@@ -81,7 +81,6 @@ public class StompExceptionHandler extends StompSubProtocolErrorHandler {
         }
     }
 
-    //2
     @Override
     protected Message<byte[]> handleInternal(StompHeaderAccessor errorHeaderAccessor,
                                              byte[] errorPayload, Throwable cause, StompHeaderAccessor clientHeaderAccessor) {

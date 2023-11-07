@@ -16,7 +16,6 @@ public class RedisPublisher {
     /**
      * 메시지를 redis 서버로 발행
      */
-
     public void publish(ChannelTopic topic, ChatMessageDto chatMessageDto) {
         redisTemplate.convertAndSend(topic.getTopic(), chatMessageDto);
     }

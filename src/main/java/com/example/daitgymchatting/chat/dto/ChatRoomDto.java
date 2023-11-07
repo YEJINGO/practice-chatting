@@ -22,6 +22,8 @@ public class ChatRoomDto implements Serializable {
     private String redisRoomId;
     private String sender;
     private String receiver;
+    private int readCount = 1;
+
 
     public static ChatRoomDto create(ChatMessageRequestDto messageRequestDto, Member member) {
         ChatRoomDto chatRoomDto = new ChatRoomDto();
@@ -40,5 +42,9 @@ public class ChatRoomDto implements Serializable {
         this.redisRoomId = chatRoom.getRedisRoomId();
         this.sender = chatRoom.getSender();
         this.receiver = chatRoom.getReceiver();
+    }
+
+    public void setReadCount(int count) {
+        this.readCount = count;
     }
 }

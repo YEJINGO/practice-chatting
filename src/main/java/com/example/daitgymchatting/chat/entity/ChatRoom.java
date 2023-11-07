@@ -1,5 +1,6 @@
 package com.example.daitgymchatting.chat.entity;
 
+import com.example.daitgymchatting.chat.dto.ChatRoomDto;
 import com.example.daitgymchatting.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -21,10 +22,13 @@ public class ChatRoom {
     @Column(name = "chat_room_id")
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
+
     private String roomName;
     private String sender;
     private String redisRoomId;
     private String receiver;
+    private String imageUrl;
+
 
     @OneToMany(mappedBy = "chatRoom")
     private List<ChatMessage> chatMessageList = new ArrayList<>();
@@ -34,17 +38,16 @@ public class ChatRoom {
     private Member member;
 
     @Builder
-    public ChatRoom(Long id, String roomName, String sender, String redisRoomId, Member member, String receiver) {
-        this.id = id;
-        this.roomName = roomName;
-        this.sender = sender;
-        this.redisRoomId = redisRoomId;
+    public ChatRoom(ChatRoomDto chatRoomDto, Member member) {
+        this.roomName = chatRoomDto.getReceiver();
+        this.sender = chatRoomDto.getSender();
+        this.redisRoomId = chatRoomDto.getRedisRoomId();
         this.member = member;
-        this.receiver = receiver;
+        this.imageUrl = member.getImageUrl();
+        this.receiver = chatRoomDto.getReceiver();
     }
-
     public void setReceiver(String receiver) {
         this.receiver = receiver;
-
     }
+
 }

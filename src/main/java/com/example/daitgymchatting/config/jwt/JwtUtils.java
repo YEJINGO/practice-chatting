@@ -121,6 +121,10 @@ public class JwtUtils {
         }
     }
 
+    public String getUid(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
+    }
+
     public String getAccessToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith(
                 TOKEN_PREFIX)) {

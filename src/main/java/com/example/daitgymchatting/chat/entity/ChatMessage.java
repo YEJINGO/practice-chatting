@@ -29,19 +29,27 @@ public class ChatMessage {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
+    private int readCount = 2;
+
 
     @ManyToOne
     @JoinColumn(name = "roomId")
     private ChatRoom chatRoom;
 
     @Builder
-    public ChatMessage(MessageType messageType, String sender, String message, String redisRoomId) {
+    public ChatMessage(MessageType messageType, String sender, ChatRoom chatRoom, String message, String redisRoomId) {
         super();
         this.messageType = messageType;
         this.sender = sender;
+        this.chatRoom = chatRoom;
         this.message = message;
         this.redisRoomId = redisRoomId;
         this.createdAt = LocalDateTime.now();
+    }
+
+
+    public int setReadCount() {
+        return readCount--;
     }
 
 }
