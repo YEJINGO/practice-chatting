@@ -52,6 +52,7 @@ public class MemberService {
     public Response<LoginMemberResponse> login(LoginRequest request) {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -67,6 +68,8 @@ public class MemberService {
 
         LoginMemberResponse result = LoginMemberResponse.builder()
                 .loginMember(loginMember)
+                .nickName(member.getNickName())
+                .imageUrl(member.getImageUrl())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();

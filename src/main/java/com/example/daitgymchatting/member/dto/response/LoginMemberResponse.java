@@ -14,13 +14,18 @@ public class LoginMemberResponse {
 
     private Role role;
 
+    private String nickName;
+    private String imageUrl;
+
     private String accessToken;
 
     private String refreshToken;
 
     @Builder
-    public LoginMemberResponse(LoginMember loginMember, String accessToken, String refreshToken) {
+    public LoginMemberResponse(LoginMember loginMember, String nickName, String imageUrl, String accessToken, String refreshToken) {
         this.userId = loginMember.getMember().getId();
+        this.nickName = nickName;
+        this.imageUrl = imageUrl;
         this.email = loginMember.getMember().getEmail();
         this.role = loginMember.getMember().getRole();
         this.accessToken = accessToken;
