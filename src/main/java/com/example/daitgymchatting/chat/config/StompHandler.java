@@ -1,12 +1,12 @@
 package com.example.daitgymchatting.chat.config;
 
-import com.example.daitgymchatting.chat.controller.ChatMessageController;
-import com.example.daitgymchatting.chat.dto.ChatMessageDto;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
+import com.example.daitgymchatting.chat.service.ChatMessageService;
 import com.example.daitgymchatting.config.jwt.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -22,7 +22,8 @@ import org.springframework.stereotype.Component;
 class StompHandler implements ChannelInterceptor {
 
     private final JwtUtils jwtUtils;
-    private final RedisPublisher redisPublisher;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ChatMessageService chatMessageService;
 //
 //    private final ChatMessageController chatMessageController;
 
@@ -33,25 +34,56 @@ class StompHandler implements ChannelInterceptor {
      */
 
 
-    @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor headerAccessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        String token = headerAccessor.getFirstNativeHeader("Authentication");
+        String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+        String email = jwtUtils.getUid(tokenStompHeader);
 
-        if (StompCommand.CONNECT.equals(headerAccessor.getCommand())) {
-            String token = headerAccessor.getFirstNativeHeader("Authentication");
-            ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
-            if (token == null) {
-                log.info("토큰값이 없습니다.");
-            }
-            String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
-            jwtUtils.validateToken(tokenStompHeader);
-            System.out.println("e");
-            String nickname = jwtUtils.getUid(tokenStompHeader);
-
-            ChatMessageDto enterMessageDto = new ChatMessageDto(MessageType.ENTER,nickname);
-            redisPublisher.publish(redisRoomId, enterMessageDto);
-
-        }
+        handleMessage(headerAccessor.getCommand(), headerAccessor, email);
         return message;
+    }
+
+    private void handleMessage(StompCommand stompCommand, StompHeaderAccessor headerAccessor, String email) {
+        switch (stompCommand) {
+
+            case CONNECT:
+                connectToChatRoom(headerAccessor, email);
+                break;
+            case SUBSCRIBE:
+                break;
+            case SEND:
+                verifyAccessToken(headerAccessor);
+                break;
+            case DISCONNECT:
+                disConnectToChatRoom(headerAccessor, email);
+                break;
+        }
+    }
+
+    private boolean verifyAccessToken(StompHeaderAccessor headerAccessor) {
+        String token = headerAccessor.getFirstNativeHeader("Authentication");
+        String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+        if (jwtUtils.validateToken(tokenStompHeader) == false) {
+            log.info("토큰값이 없습니다.");
+            return false;
+        }
+        return true;
+    }
+
+    private void connectToChatRoom(StompHeaderAccessor headerAccessor, String email) {
+        ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
+        String stringRedisRoomID = redisRoomId.toString();
+
+        SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
+        setOperations.add(stringRedisRoomID, email);
+        Long size = setOperations.size(stringRedisRoomID);
+        chatMessageService.updateReadCount(stringRedisRoomID, size);
+    }
+
+    private void disConnectToChatRoom(StompHeaderAccessor headerAccessor, String email) {
+        ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
+        String stringRedisRoomID = redisRoomId.toString();
+        redisTemplate.opsForSet().remove(stringRedisRoomID, email);
     }
 }

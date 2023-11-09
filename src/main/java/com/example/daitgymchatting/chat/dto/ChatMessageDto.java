@@ -1,7 +1,6 @@
 package com.example.daitgymchatting.chat.dto;
 
 import com.example.daitgymchatting.chat.entity.ChatMessage;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -27,12 +26,10 @@ public class ChatMessageDto {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
-    private Duration timeDifference;
-    private MessageType messageType;
+
 
 
     public ChatMessageDto(ChatMessage chatMessage) {
-        this.messageType = chatMessage.getMessageType();
         this.chatMessageId = chatMessage.getId();
         this.redisRoomId = chatMessage.getRedisRoomId();
         this.sender = chatMessage.getSender();
@@ -41,10 +38,6 @@ public class ChatMessageDto {
         this.createdAt = LocalDateTime.now();
     }
 
-    public ChatMessageDto(MessageType messageType,String sender) {
-        this.messageType = messageType;
-        this.sender = sender;
-    }
 
     public void setReadCount(int readCount) {
         this.readCount = readCount;
