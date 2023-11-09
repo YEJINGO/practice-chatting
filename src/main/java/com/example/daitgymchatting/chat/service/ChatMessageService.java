@@ -41,7 +41,7 @@ public class ChatMessageService {
      */
     public ChatMessageDto save(ChatMessageDto chatMessageDto) {
         ChatRoom chatroom = chatRoomRepository.findByRedisRoomId(chatMessageDto.getRedisRoomId());
-        int size = Math.toIntExact(redisTemplate.opsForSet().size(chatroom.getRedisRoomId()));
+        int size = Math.toIntExact(redisTemplate.opsForSet().size(chatroom.getRedisRoomId() + "set"));
         if (size == 2) {
             chatMessageDto.setReadCount(0);
         } else {
@@ -95,28 +95,28 @@ public class ChatMessageService {
             chatMessageDtos.addAll(redisMessageList);
         }
 
-        // 수정된 요소를 가지는 새로운 리스트를 생성
-        List<ChatMessageDto> modifiedChatMessageDtos = new ArrayList<>(chatMessageDtos);
+//        // 수정된 요소를 가지는 새로운 리스트를 생성
+//        List<ChatMessageDto> modifiedChatMessageDtos = new ArrayList<>(chatMessageDtos);
+//
+//        Iterator<ChatMessageDto> iterator = modifiedChatMessageDtos.iterator();
+//        while (iterator.hasNext()) {
+//            ChatMessageDto chatMessageDto = iterator.next();
+//            Long chatMessageId = chatMessageDto.getChatMessageId();
+//            String redisRoomId = chatMessageDto.getRedisRoomId();
+//            ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId).orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND_ROOM));
+//            if (!memberNickName.equals(chatMessageDto.getSender())) {
+//                if (chatMessageDto.getReadCount() == 1) {
+//                    chatMessageDto.setReadCount(chatMessageDto.getReadCount() - 1);
+//                    // TODO redis 저장, rdb 저장
+//
+//                    redisTemplateMessage.opsForList().set(redisRoomId, chatMessageDtos.indexOf(chatMessageDto), chatMessageDto);
+//                    chatMessage.setReadCount(0);
+//                    chatMessageRepository.save(chatMessage);
+//                }
+//            }
+//        }
 
-        Iterator<ChatMessageDto> iterator = modifiedChatMessageDtos.iterator();
-        while (iterator.hasNext()) {
-            ChatMessageDto chatMessageDto = iterator.next();
-            Long chatMessageId = chatMessageDto.getChatMessageId();
-            String redisRoomId = chatMessageDto.getRedisRoomId();
-            ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId).orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND_ROOM));
-            if (!memberNickName.equals(chatMessageDto.getSender())) {
-                if (chatMessageDto.getReadCount() == 1) {
-                    chatMessageDto.setReadCount(chatMessageDto.getReadCount() - 1);
-                    // TODO redis 저장, rdb 저장
-
-                    redisTemplateMessage.opsForList().set(redisRoomId, chatMessageDtos.indexOf(chatMessageDto), chatMessageDto);
-                    chatMessage.setReadCount(0);
-                    chatMessageRepository.save(chatMessage);
-                }
-            }
-        }
-
-        return modifiedChatMessageDtos;
+        return chatMessageDtos;
     }
 
     /**
