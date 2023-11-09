@@ -2,8 +2,6 @@ package com.example.daitgymchatting.chat.pubsub;
 
 
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
-import com.example.daitgymchatting.chat.entity.ChatMessage;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.example.daitgymchatting.chat.repo.ChatMessageRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -11,11 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -41,23 +36,7 @@ public class RedisSubscriber implements MessageListener {
             String publishMessage = (String) redisTemplate.getStringSerializer().deserialize(message.getBody());
             ChatMessageDto chatMessageDto = objectMapper.readValue(publishMessage, ChatMessageDto.class);
 
-            if (chatMessageDto.getMessageType() == MessageType.TALK) {
-
-                Long chatMessageId = chatMessageDto.getChatMessageId();
-                String redisRoomId = chatMessageDto.getRedisRoomId();
-                ChatMessage chatMessage = chatMessageRepository.findByRedisRoomIdAndId(redisRoomId, chatMessageId);
-                chatMessage.minusReadCount();
-                chatMessageDto.setReadCount(chatMessage.getReadCount());
-
-
-                redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
-                redisTemplateMessage.opsForList().rightPush(chatMessage.getRedisRoomId(), chatMessageDto);
-                redisTemplateMessage.expire(chatMessage.getRedisRoomId(), 60, TimeUnit.MINUTES);
-                chatMessageRepository.save(chatMessage);
-            }
-
             messagingTemplate.convertAndSend("/sub/chat/room/" + chatMessageDto.getRedisRoomId(), chatMessageDto);
-
 
         } catch (Exception e) {
             log.error(e.getMessage());

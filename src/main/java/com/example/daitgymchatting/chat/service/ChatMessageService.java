@@ -9,15 +9,19 @@ import com.example.daitgymchatting.exception.ErrorCode;
 import com.example.daitgymchatting.exception.GlobalException;
 import com.example.daitgymchatting.member.entity.Member;
 import com.example.daitgymchatting.member.repo.MemberRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -25,12 +29,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatMessageService {
 
-    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
+    private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
     private final ChatRoomRepository chatRoomRepository;
-    private final ChatMessageRepository chatMessageRepository;
-
-
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
     /**
      * 1. setValueSerializer: 직렬화
      * 2. rightPush: redis 저장
@@ -38,15 +41,22 @@ public class ChatMessageService {
      */
     public ChatMessageDto save(ChatMessageDto chatMessageDto) {
         ChatRoom chatroom = chatRoomRepository.findByRedisRoomId(chatMessageDto.getRedisRoomId());
+        int size = Math.toIntExact(redisTemplate.opsForSet().size(chatroom.getRedisRoomId()));
+        if (size == 2) {
+            chatMessageDto.setReadCount(0);
+        } else {
+            chatMessageDto.setReadCount(1);
+        }
         ChatMessage chatMessage = ChatMessage.builder()
                 .sender(chatMessageDto.getSender())
                 .chatRoom(chatroom)
                 .message(chatMessageDto.getMessage())
                 .redisRoomId(chatMessageDto.getRedisRoomId())
+                .readCount(chatMessageDto.getReadCount())
                 .build();
         chatMessageRepository.save(chatMessage);
         chatMessageDto.setChatMessageId(chatMessage.getId());
-        chatMessageDto.setReadCount(2);
+
 
 
         return chatMessageDto;
@@ -72,7 +82,7 @@ public class ChatMessageService {
 
         List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
 
-        if (redisMessageList == null || redisMessageList.isEmpty()|| redisMessageList.size()<10) {
+        if (redisMessageList == null || redisMessageList.isEmpty() || redisMessageList.size() < 10) {
             List<ChatMessage> dbMessageList = chatMessageRepository.findTop100ByRedisRoomIdOrderByCreatedAtAsc(roomId);
 
             for (ChatMessage chatMessage : dbMessageList) {
@@ -116,9 +126,7 @@ public class ChatMessageService {
      */
     public ChatMessageDto latestMessage(String roomId) {
 
-        ListOperations<String, ChatMessageDto> op = redisTemplateMessage.opsForList();
-        ChatMessageDto latestMessage = op.index(roomId, 0);
-
+        ChatMessageDto latestMessage = redisTemplateMessage.opsForList().index(roomId, -1);
 
 
         if (latestMessage == null) {
@@ -133,21 +141,18 @@ public class ChatMessageService {
         return latestMessage;
     }
 
-    public void minusReadCount(String redisRoomId) {
-
-        ChatMessage chatMessage = chatMessageRepository.findByRedisRoomId(redisRoomId);
-        chatMessage.setReadCount(1);
-        chatMessageRepository.save(chatMessage);
-
-    }
-
     public void updateReadCount(String redisRoomId, Long size) {
-        ChatMessage chatMessage = chatMessageRepository.findByRedisRoomId(redisRoomId);
-        if (chatMessage != null) {
+        List<ChatMessage> chatMessages = chatMessageRepository.findAllByRedisRoomId(redisRoomId);
+        if (chatMessages.size() != 0) {
             if (size == 2) {
-                chatMessage.setReadCount(0);
+                for (ChatMessage chatMessage : chatMessages) {
+                    chatMessage.setReadCount(0);
+                }
+            } else {
+                for (ChatMessage chatMessage : chatMessages) {
+                    chatMessage.setReadCount(1);
+                }
             }
-            chatMessage.setReadCount(1);
         }
     }
 }
@@ -172,3 +177,4 @@ public class ChatMessageService {
 //        }
 //        return chatMessageDtos;
 //    }
+

@@ -32,7 +32,6 @@ public class ChatMessageDto {
 
 
     public ChatMessageDto(ChatMessage chatMessage) {
-        this.messageType = chatMessage.getMessageType();
         this.chatMessageId = chatMessage.getId();
         this.redisRoomId = chatMessage.getRedisRoomId();
         this.sender = chatMessage.getSender();
@@ -41,11 +40,6 @@ public class ChatMessageDto {
         this.createdAt = LocalDateTime.now();
     }
 
-    public ChatMessageDto(MessageType messageType,String sender,String redisRoomId) {
-        this.messageType = messageType;
-        this.sender = sender;
-        this.redisRoomId = redisRoomId;
-    }
 
     public void setReadCount(int readCount) {
         this.readCount = readCount;

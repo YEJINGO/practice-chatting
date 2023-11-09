@@ -6,6 +6,7 @@ import com.example.daitgymchatting.chat.service.ChatMessageService;
 import com.example.daitgymchatting.chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
@@ -24,6 +26,7 @@ public class ChatMessageController {
     private final ChatRoomService chatRoomService;
     private final ChatMessageService messageService;
 
+    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
 
     /**
      * websocket "/pub/chat/message/" 로 들어오는 메시징을 처리한다.
@@ -35,8 +38,11 @@ public class ChatMessageController {
         chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
         chatMessageDto.setCreatedAt(LocalDateTime.now());
 
+
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
         ChatMessageDto cmd = messageService.save(chatMessageDto);
+        redisTemplateMessage.opsForList().rightPush(cmd.getRedisRoomId(), cmd);
+        redisTemplateMessage.expire(cmd.getRedisRoomId(), 60, TimeUnit.MINUTES);
         redisPublisher.publish(topic, cmd);
     }
 

@@ -1,6 +1,7 @@
 package com.example.daitgymchatting.chat.config;
 
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -41,13 +42,12 @@ public class RedisConfig {
      * Redis 에 메시지 내역을 저장하기 위한 RedisTemplate 을 설정
      */
     @Bean
-    public RedisTemplate<String, ChatMessageDto> redisTemplateMessage(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, ChatMessageDto> redisTemplateMessage = new RedisTemplate<>();
-        redisTemplateMessage.setConnectionFactory(connectionFactory);
-        redisTemplateMessage.setKeySerializer(new StringRedisSerializer());
-        redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
-
-        return redisTemplateMessage;
+    public RedisTemplate<String, ChatMessageDto> redisTemplateMessage(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, ChatMessageDto> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
+        return template;
     }
 
 }

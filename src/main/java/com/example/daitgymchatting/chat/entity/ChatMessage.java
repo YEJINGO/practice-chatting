@@ -28,8 +28,7 @@ public class ChatMessage {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
-    private int readCount = 2;
-    private MessageType messageType;
+    private int readCount;
 
 
 
@@ -38,19 +37,14 @@ public class ChatMessage {
     private ChatRoom chatRoom;
 
     @Builder
-    public ChatMessage( MessageType messageType, String sender, ChatRoom chatRoom, String message, String redisRoomId) {
+    public ChatMessage( String sender, ChatRoom chatRoom, String message, String redisRoomId,int readCount) {
         super();
-        this.messageType = messageType;
         this.sender = sender;
         this.chatRoom = chatRoom;
         this.message = message;
         this.redisRoomId = redisRoomId;
+        this.readCount = readCount;
         this.createdAt = LocalDateTime.now();
-    }
-
-
-    public void minusReadCount() {
-        --this.readCount;
     }
 
 }
