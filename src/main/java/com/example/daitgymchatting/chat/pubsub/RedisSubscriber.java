@@ -4,6 +4,7 @@ package com.example.daitgymchatting.chat.pubsub;
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
 import com.example.daitgymchatting.chat.entity.ChatMessage;
 import com.example.daitgymchatting.chat.entity.ChatRoom;
+import com.example.daitgymchatting.chat.entity.MessageType;
 import com.example.daitgymchatting.chat.repo.ChatMessageRepository;
 import com.example.daitgymchatting.chat.repo.ChatRoomRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,18 +40,22 @@ public class RedisSubscriber implements MessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
+
             String publishMessage = (String) redisTemplate.getStringSerializer().deserialize(message.getBody());
             ChatMessageDto chatMessageDto = objectMapper.readValue(publishMessage, ChatMessageDto.class);
 
-            Long chatMessageId = chatMessageDto.getChatMessageId();
-            String redisRoomId = chatMessageDto.getRedisRoomId();
-            ChatMessage chatMessage = chatMessageRepository.findByRedisRoomIdAndId(redisRoomId, chatMessageId);
-            chatMessageDto.setReadCount(chatMessage.setReadCount());
+            if (chatMessageDto.getMessageType() == MessageType.TALK) {
 
-            redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
-            redisTemplateMessage.opsForList().rightPush(chatMessage.getRedisRoomId(), chatMessageDto);
-            redisTemplateMessage.expire(chatMessage.getRedisRoomId(), 60, TimeUnit.MINUTES);
-            chatMessageRepository.save(chatMessage);
+                Long chatMessageId = chatMessageDto.getChatMessageId();
+                String redisRoomId = chatMessageDto.getRedisRoomId();
+                ChatMessage chatMessage = chatMessageRepository.findByRedisRoomIdAndId(redisRoomId, chatMessageId);
+                chatMessageDto.setReadCount(chatMessage.setReadCount());
+
+                redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
+                redisTemplateMessage.opsForList().rightPush(chatMessage.getRedisRoomId(), chatMessageDto);
+                redisTemplateMessage.expire(chatMessage.getRedisRoomId(), 60, TimeUnit.MINUTES);
+                chatMessageRepository.save(chatMessage);
+            }
 
             messagingTemplate.convertAndSend("/sub/chat/room/" + chatMessageDto.getRedisRoomId(), chatMessageDto);
 
