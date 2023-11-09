@@ -11,6 +11,7 @@ import com.example.daitgymchatting.member.entity.Member;
 import com.example.daitgymchatting.member.repo.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,10 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatMessageService {
 
-    private final ChatMessageRepository chatMessageRepository;
+    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
     private final MemberRepository memberRepository;
     private final ChatRoomRepository chatRoomRepository;
-    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
+    private final ChatMessageRepository chatMessageRepository;
 
 
     /**
@@ -115,7 +116,9 @@ public class ChatMessageService {
      */
     public ChatMessageDto latestMessage(String roomId) {
 
-        ChatMessageDto latestMessage = redisTemplateMessage.opsForList().index(roomId, -1);
+        ListOperations<String, ChatMessageDto> op = redisTemplateMessage.opsForList();
+        ChatMessageDto latestMessage = op.index(roomId, 0);
+
 
 
         if (latestMessage == null) {
@@ -128,6 +131,24 @@ public class ChatMessageService {
             }
         }
         return latestMessage;
+    }
+
+    public void minusReadCount(String redisRoomId) {
+
+        ChatMessage chatMessage = chatMessageRepository.findByRedisRoomId(redisRoomId);
+        chatMessage.setReadCount(1);
+        chatMessageRepository.save(chatMessage);
+
+    }
+
+    public void updateReadCount(String redisRoomId, Long size) {
+        ChatMessage chatMessage = chatMessageRepository.findByRedisRoomId(redisRoomId);
+        if (chatMessage != null) {
+            if (size == 2) {
+                chatMessage.setReadCount(0);
+            }
+            chatMessage.setReadCount(1);
+        }
     }
 }
 

@@ -49,8 +49,8 @@ public class ChatMessage {
     }
 
 
-    public int setReadCount() {
-        return --readCount;
+    public void minusReadCount() {
+        --this.readCount;
     }
 
 }

@@ -124,8 +124,8 @@ public class JwtUtils {
     public String getUid(String token) {
 
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-        String nickName = claims.get("nickName", String.class);
-        return nickName;
+        String email = claims.get("email", String.class);
+        return email;
     }
 
     public String getAccessToken(String authorizationHeader) {
