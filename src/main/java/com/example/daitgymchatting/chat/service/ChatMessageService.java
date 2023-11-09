@@ -12,13 +12,12 @@ import com.example.daitgymchatting.member.repo.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+
 
 @Slf4j
 @Service
@@ -39,7 +38,6 @@ public class ChatMessageService {
     public ChatMessageDto save(ChatMessageDto chatMessageDto) {
         ChatRoom chatroom = chatRoomRepository.findByRedisRoomId(chatMessageDto.getRedisRoomId());
         ChatMessage chatMessage = ChatMessage.builder()
-                .messageType(chatMessageDto.getMessageType())
                 .sender(chatMessageDto.getSender())
                 .chatRoom(chatroom)
                 .message(chatMessageDto.getMessage())
@@ -73,7 +71,7 @@ public class ChatMessageService {
 
         List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
 
-        if (redisMessageList == null || redisMessageList.isEmpty()) {
+        if (redisMessageList == null || redisMessageList.isEmpty()|| redisMessageList.size()<10) {
             List<ChatMessage> dbMessageList = chatMessageRepository.findTop100ByRedisRoomIdOrderByCreatedAtAsc(roomId);
 
             for (ChatMessage chatMessage : dbMessageList) {
@@ -92,17 +90,23 @@ public class ChatMessageService {
         Iterator<ChatMessageDto> iterator = modifiedChatMessageDtos.iterator();
         while (iterator.hasNext()) {
             ChatMessageDto chatMessageDto = iterator.next();
-            if (!member.getNickName().equals(chatMessageDto.getSender())) {
+            Long chatMessageId = chatMessageDto.getChatMessageId();
+            String redisRoomId = chatMessageDto.getRedisRoomId();
+            ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId).orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND_ROOM));
+            if (!memberNickName.equals(chatMessageDto.getSender())) {
                 if (chatMessageDto.getReadCount() == 1) {
                     chatMessageDto.setReadCount(chatMessageDto.getReadCount() - 1);
                     // TODO redis 저장, rdb 저장
+
+                    redisTemplateMessage.opsForList().set(redisRoomId, chatMessageDtos.indexOf(chatMessageDto), chatMessageDto);
+                    chatMessage.setReadCount(0);
+                    chatMessageRepository.save(chatMessage);
                 }
             }
         }
 
         return modifiedChatMessageDtos;
     }
-
 
     /**
      * 최신 메세지 가져오기
@@ -125,7 +129,6 @@ public class ChatMessageService {
         }
         return latestMessage;
     }
-
 }
 
 //    public List<ChatMessageDto> loadMessage(String roomId){

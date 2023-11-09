@@ -1,7 +1,6 @@
 package com.example.daitgymchatting.chat.controller;
 
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
 import com.example.daitgymchatting.chat.service.ChatMessageService;
 import com.example.daitgymchatting.chat.service.ChatRoomService;
@@ -41,25 +40,6 @@ public class ChatMessageController {
         redisPublisher.publish(topic, cmd);
     }
 
-//       @MessageMapping("/message")
-//    public void message(ChatMessageDto chatMessageDto) {
-//        log.info("채팅 메시지");
-//
-//        if (MessageType.ENTER.equals(chatMessageDto.getMessageType())) {
-//            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
-//            chatMessageDto.setMessage("[알림]");
-//            chatMessageDto.setMessage(chatMessageDto.getSender() + "님이 입장하셨습니다.");
-//        } else if (MessageType.TALK.equals(chatMessageDto.getMessageType())) {
-//            chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
-//        }
-//
-//        chatMessageDto.setCreatedAt(LocalDateTime.now());
-//
-//        ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
-//        redisPublisher.publish(topic, chatMessageDto);
-//        messageService.save(chatMessageDto);
-//
-//    }
 //        /**
 //         * 대화 내역 조회
 //         */

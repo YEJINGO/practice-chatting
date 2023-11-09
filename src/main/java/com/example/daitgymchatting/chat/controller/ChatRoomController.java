@@ -1,12 +1,16 @@
 package com.example.daitgymchatting.chat.controller;
 
-import com.example.daitgymchatting.chat.dto.*;
+import com.example.daitgymchatting.chat.dto.ChatMessageRequestDto;
+import com.example.daitgymchatting.chat.dto.ChatMessageResponseDto;
+import com.example.daitgymchatting.chat.dto.ChatRoomResponse;
+import com.example.daitgymchatting.chat.dto.SelectedChatRoomResponse;
 import com.example.daitgymchatting.chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -20,10 +24,11 @@ public class ChatRoomController {
     /**
      * 채팅방 생성
      */
-    @PostMapping("/room")
+    @PostMapping("/rooms")
     public ChatRoomResponse createRoom(@RequestParam Long memberId, @RequestBody ChatMessageRequestDto chatMessageRequestDto) {
         return chatService.createChatRoom(memberId, chatMessageRequestDto);
     }
+
 
     /**
      * 사용자 관련 모든 채팅방 조회

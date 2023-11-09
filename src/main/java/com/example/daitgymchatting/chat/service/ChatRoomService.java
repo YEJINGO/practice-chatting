@@ -1,11 +1,8 @@
 package com.example.daitgymchatting.chat.service;
 
 import com.example.daitgymchatting.chat.dto.*;
-import com.example.daitgymchatting.chat.entity.ChatMessage;
 import com.example.daitgymchatting.chat.entity.ChatRoom;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.example.daitgymchatting.chat.entity.UsersChattingRoom;
-import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
 import com.example.daitgymchatting.chat.pubsub.RedisSubscriber;
 import com.example.daitgymchatting.chat.repo.ChatRoomRepository;
 import com.example.daitgymchatting.chat.repo.UsersChattingRoomRepository;
@@ -21,7 +18,6 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

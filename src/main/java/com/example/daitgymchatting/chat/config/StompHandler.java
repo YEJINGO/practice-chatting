@@ -1,12 +1,13 @@
 package com.example.daitgymchatting.chat.config;
 
+import com.example.daitgymchatting.chat.controller.ChatMessageController;
 import com.example.daitgymchatting.chat.dto.ChatMessageDto;
 import com.example.daitgymchatting.chat.entity.MessageType;
-import com.example.daitgymchatting.chat.service.ChatMessageService;
-import com.example.daitgymchatting.chat.service.ChatRoomService;
+import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
 import com.example.daitgymchatting.config.jwt.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -15,16 +16,15 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
-import java.security.Principal;
-import java.util.Optional;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
 class StompHandler implements ChannelInterceptor {
 
     private final JwtUtils jwtUtils;
-    private ChatRoomService chatRoomService;
+    private final RedisPublisher redisPublisher;
+//
+//    private final ChatMessageController chatMessageController;
 
     /**
      * Websocket 연결 시 요청 header 의 jwt token 유효성을 검증하는 코드를 추가한다. 유효하지 않은 JWT 토큰일 경우, websocket을 연결하지 않고 예외 처리 한다.
@@ -39,12 +39,17 @@ class StompHandler implements ChannelInterceptor {
 
         if (StompCommand.CONNECT.equals(headerAccessor.getCommand())) {
             String token = headerAccessor.getFirstNativeHeader("Authentication");
+            ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
             if (token == null) {
                 log.info("토큰값이 없습니다.");
             }
             String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
             jwtUtils.validateToken(tokenStompHeader);
+            System.out.println("e");
+            String nickname = jwtUtils.getUid(tokenStompHeader);
 
+            ChatMessageDto enterMessageDto = new ChatMessageDto(MessageType.ENTER,nickname);
+            redisPublisher.publish(redisRoomId, enterMessageDto);
 
         }
         return message;

@@ -40,4 +40,9 @@ public class Member {
         this.imageUrl = imageUrl;
         this.role = role;
     }
+
+    @Builder
+    public Member(String nickName) {
+        this.nickName = nickName;
+    }
 }

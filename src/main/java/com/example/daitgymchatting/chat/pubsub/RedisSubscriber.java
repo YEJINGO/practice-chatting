@@ -46,6 +46,7 @@ public class RedisSubscriber implements MessageListener {
             String redisRoomId = chatMessageDto.getRedisRoomId();
             ChatMessage chatMessage = chatMessageRepository.findByRedisRoomIdAndId(redisRoomId, chatMessageId);
             chatMessageDto.setReadCount(chatMessage.setReadCount());
+
             redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
             redisTemplateMessage.opsForList().rightPush(chatMessage.getRedisRoomId(), chatMessageDto);
             redisTemplateMessage.expire(chatMessage.getRedisRoomId(), 60, TimeUnit.MINUTES);

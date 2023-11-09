@@ -44,7 +44,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .claim("id", loginMember.getMember().getId())
                 .claim("email", loginMember.getMember().getEmail())
-                .claim("slackId", loginMember.getMember().getNickName())
+                .claim("nickName", loginMember.getMember().getNickName())
                 .claim("role", loginMember.getMember().getRole())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + ACCESS_TOKEN_EXPIRATION_TIME))
@@ -122,7 +122,10 @@ public class JwtUtils {
     }
 
     public String getUid(String token) {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
+
+        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        String nickName = claims.get("nickName", String.class);
+        return nickName;
     }
 
     public String getAccessToken(String authorizationHeader) {
@@ -143,13 +146,13 @@ public class JwtUtils {
 
         Long id = claims.get("id", Long.class);
         String email = claims.get("email", String.class);
-        String slackId = claims.get("slackId", String.class);
+        String nickName = claims.get("nickName", String.class);
         String role = claims.get("role", String.class);
 
         Member member = Member.builder()
                 .id(id)
                 .email(email)
-                .nickName(slackId)
+                .nickName(nickName)
                 .role(Role.valueOf(role))
                 .build();
 

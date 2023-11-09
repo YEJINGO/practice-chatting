@@ -46,8 +46,4 @@ public class ChatRoom {
         this.imageUrl = member.getImageUrl();
         this.receiver = chatRoomDto.getReceiver();
     }
-    public void setReceiver(String receiver) {
-        this.receiver = receiver;
-    }
-
 }

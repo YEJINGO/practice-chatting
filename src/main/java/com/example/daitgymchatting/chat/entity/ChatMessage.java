@@ -22,7 +22,6 @@ public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private MessageType messageType;
     private String sender;
     private String message;
     private String redisRoomId;
@@ -30,6 +29,8 @@ public class ChatMessage {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
     private int readCount = 2;
+    private MessageType messageType;
+
 
 
     @ManyToOne
@@ -37,7 +38,7 @@ public class ChatMessage {
     private ChatRoom chatRoom;
 
     @Builder
-    public ChatMessage(MessageType messageType, String sender, ChatRoom chatRoom, String message, String redisRoomId) {
+    public ChatMessage( MessageType messageType, String sender, ChatRoom chatRoom, String message, String redisRoomId) {
         super();
         this.messageType = messageType;
         this.sender = sender;

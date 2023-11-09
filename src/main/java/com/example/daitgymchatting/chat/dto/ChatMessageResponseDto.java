@@ -1,12 +1,7 @@
 package com.example.daitgymchatting.chat.dto;
 
-import com.example.daitgymchatting.chat.entity.ChatRoom;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor

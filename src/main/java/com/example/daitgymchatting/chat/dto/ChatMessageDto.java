@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +18,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatMessageDto {
 
-    private MessageType messageType;
     private Long chatMessageId;
     private String sender;
     private String message;
@@ -30,24 +28,22 @@ public class ChatMessageDto {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
     private Duration timeDifference;
+    private MessageType messageType;
 
 
     public ChatMessageDto(ChatMessage chatMessage) {
+        this.messageType = chatMessage.getMessageType();
         this.chatMessageId = chatMessage.getId();
         this.redisRoomId = chatMessage.getRedisRoomId();
-        this.messageType = chatMessage.getMessageType();
         this.sender = chatMessage.getSender();
         this.message = chatMessage.getMessage();
         this.readCount = chatMessage.getReadCount();
         this.createdAt = LocalDateTime.now();
     }
 
-    @Builder
-    public ChatMessageDto(MessageType messageType, String redisRoomId, String sender, String message) {
+    public ChatMessageDto(MessageType messageType,String sender) {
         this.messageType = messageType;
-        this.redisRoomId = redisRoomId;
         this.sender = sender;
-        this.message = message;
     }
 
     public void setReadCount(int readCount) {
