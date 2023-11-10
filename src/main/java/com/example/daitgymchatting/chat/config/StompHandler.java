@@ -16,6 +16,8 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+import static org.springframework.messaging.simp.stomp.StompCommand.DISCONNECT;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -37,13 +39,30 @@ class StompHandler implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor headerAccessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         String token = headerAccessor.getFirstNativeHeader("Authentication");
-        String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
-        String email = jwtUtils.getUid(tokenStompHeader);
+        String session = headerAccessor.getFirstNativeHeader("simpSessionId");
+        String redisRoomId = headerAccessor.getFirstNativeHeader("RedisRoomId");
 
-        handleMessage(headerAccessor.getCommand(), headerAccessor, email);
+        if (headerAccessor.getCommand() != DISCONNECT) {
+            redisTemplate.opsForHash().put("SESSION", session, redisRoomId);
+            String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+            String email = jwtUtils.getUid(tokenStompHeader);
+
+            handleMessage(headerAccessor.getCommand(), headerAccessor, email);
+        }
+        else {
+            redisRoomId = (String) redisTemplate.opsForHash().get("SESSION", session);
+
+        }
+
         return message;
-    }
 
+    }
+    //7623ab78-20d1-97dd-22de-a1ead8892875
+    //simpSessionId -> 7623ab78-20d1-97dd-22de-a1ead8892875
+    //simpSessionId -> 7623ab78-20d1-97dd-22de-a1ead8892875
+
+    //simpSessionId -> 7a0c4eb7-fcf4-507f-4a63-dd96b6571a92
+    //simpSessionId -> 7a0c4eb7-fcf4-507f-4a63-dd96b6571a92
     private void handleMessage(StompCommand stompCommand, StompHeaderAccessor headerAccessor, String email) {
         switch (stompCommand) {
 
@@ -54,9 +73,6 @@ class StompHandler implements ChannelInterceptor {
                 break;
             case SEND:
                 verifyAccessToken(headerAccessor);
-                break;
-            case DISCONNECT:
-                disConnectToChatRoom(headerAccessor, email);
                 break;
         }
     }
@@ -76,14 +92,12 @@ class StompHandler implements ChannelInterceptor {
         String stringRedisRoomID = redisRoomId.toString();
 
         SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
-        setOperations.add(stringRedisRoomID, email);
-        Long size = setOperations.size(stringRedisRoomID);
+        setOperations.add(stringRedisRoomID + "set", email);
+        Long size = setOperations.size(stringRedisRoomID + "set");
         chatMessageService.updateReadCount(stringRedisRoomID, size);
     }
 
-    private void disConnectToChatRoom(StompHeaderAccessor headerAccessor, String email) {
-        ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
-        String stringRedisRoomID = redisRoomId.toString();
-        redisTemplate.opsForSet().remove(stringRedisRoomID, email);
+    private void disConnectToChatRoom(String stringRedisRoomID, String email) {
+        redisTemplate.opsForSet().remove(stringRedisRoomID + "set", email);
     }
 }

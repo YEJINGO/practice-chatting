@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,8 @@ public class ChatMessageController {
 
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
         ChatMessageDto cmd = messageService.save(chatMessageDto);
+
+        redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
         redisTemplateMessage.opsForList().rightPush(cmd.getRedisRoomId(), cmd);
         redisTemplateMessage.expire(cmd.getRedisRoomId(), 60, TimeUnit.MINUTES);
         redisPublisher.publish(topic, cmd);
