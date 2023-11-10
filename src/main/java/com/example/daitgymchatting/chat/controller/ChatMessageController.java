@@ -39,13 +39,9 @@ public class ChatMessageController {
         chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
         chatMessageDto.setCreatedAt(LocalDateTime.now());
 
-
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
         ChatMessageDto cmd = messageService.save(chatMessageDto);
 
-        redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
-        redisTemplateMessage.opsForList().rightPush(cmd.getRedisRoomId(), cmd);
-        redisTemplateMessage.expire(cmd.getRedisRoomId(), 60, TimeUnit.MINUTES);
         redisPublisher.publish(topic, cmd);
     }
 

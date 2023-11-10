@@ -45,7 +45,7 @@ public class ChatRoomService {
      * RedisTemplate
      */
     private static final String CHAT_ROOMS = "CHAT_ROOM";
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private HashOperations<String, String, ChatRoomDto> opsHashChatRoom;
 
     /**

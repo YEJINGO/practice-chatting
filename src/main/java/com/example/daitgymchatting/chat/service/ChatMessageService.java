@@ -9,17 +9,13 @@ import com.example.daitgymchatting.exception.ErrorCode;
 import com.example.daitgymchatting.exception.GlobalException;
 import com.example.daitgymchatting.member.entity.Member;
 import com.example.daitgymchatting.member.repo.MemberRepository;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +30,7 @@ public class ChatMessageService {
     private final ChatRoomRepository chatRoomRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
+
     /**
      * 1. setValueSerializer: 직렬화
      * 2. rightPush: redis 저장
@@ -57,7 +54,9 @@ public class ChatMessageService {
         chatMessageRepository.save(chatMessage);
         chatMessageDto.setChatMessageId(chatMessage.getId());
 
-
+        redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
+        redisTemplateMessage.opsForList().rightPush(chatMessageDto.getRedisRoomId(), chatMessageDto);
+        redisTemplateMessage.expire(chatMessageDto.getRedisRoomId(), 60, TimeUnit.MINUTES);
 
         return chatMessageDto;
     }
@@ -76,7 +75,6 @@ public class ChatMessageService {
      */
     public List<ChatMessageDto> loadMessage(String roomId, Long memberId) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
-        String memberNickName = member.getNickName();
 
         List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
 
@@ -92,8 +90,17 @@ public class ChatMessageService {
                 redisTemplateMessage.opsForList().rightPush(roomId, chatMessageDto);
             }
         } else {
+            for (int i = 0; i < redisMessageList.size(); i++) {
+                if (redisMessageList.get(i).getReadCount() == 1) {
+                    redisMessageList.get(i).setReadCount(0);
+                    redisTemplateMessage.opsForList().set(roomId, i, redisMessageList.get(i));
+                }
+            }
             chatMessageDtos.addAll(redisMessageList);
         }
+
+        return chatMessageDtos;
+    }
 
 //        // 수정된 요소를 가지는 새로운 리스트를 생성
 //        List<ChatMessageDto> modifiedChatMessageDtos = new ArrayList<>(chatMessageDtos);
@@ -116,8 +123,6 @@ public class ChatMessageService {
 //            }
 //        }
 
-        return chatMessageDtos;
-    }
 
     /**
      * 최신 메세지 가져오기
@@ -143,14 +148,17 @@ public class ChatMessageService {
 
     public void updateReadCount(String redisRoomId, Long size) {
         List<ChatMessage> chatMessages = chatMessageRepository.findAllByRedisRoomId(redisRoomId);
-        if (chatMessages.size() != 0) {
+        if (!chatMessages.isEmpty()) {
             if (size == 2) {
                 for (ChatMessage chatMessage : chatMessages) {
                     chatMessage.setReadCount(0);
+                    chatMessageRepository.save(chatMessage);
                 }
             } else {
                 for (ChatMessage chatMessage : chatMessages) {
                     chatMessage.setReadCount(1);
+                    chatMessageRepository.save(chatMessage);
+
                 }
             }
         }

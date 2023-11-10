@@ -1,10 +1,11 @@
 package com.example.daitgymchatting.chat.config;
 
-import com.example.daitgymchatting.chat.pubsub.RedisPublisher;
 import com.example.daitgymchatting.chat.service.ChatMessageService;
 import com.example.daitgymchatting.config.jwt.JwtUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -16,7 +17,8 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.messaging.simp.stomp.StompCommand.DISCONNECT;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -26,8 +28,15 @@ class StompHandler implements ChannelInterceptor {
     private final JwtUtils jwtUtils;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ChatMessageService chatMessageService;
-//
-//    private final ChatMessageController chatMessageController;
+    private HashOperations<String, String, String> hashOperations;
+    private Map<String, String> sessionId;
+
+
+    @PostConstruct
+    private void init() {
+        hashOperations = redisTemplate.opsForHash();
+        sessionId = new HashMap<>();
+    }
 
     /**
      * Websocket 연결 시 요청 header 의 jwt token 유효성을 검증하는 코드를 추가한다. 유효하지 않은 JWT 토큰일 경우, websocket을 연결하지 않고 예외 처리 한다.
@@ -38,41 +47,24 @@ class StompHandler implements ChannelInterceptor {
 
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor headerAccessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        String token = headerAccessor.getFirstNativeHeader("Authentication");
-        String session = headerAccessor.getFirstNativeHeader("simpSessionId");
-        String redisRoomId = headerAccessor.getFirstNativeHeader("RedisRoomId");
-
-        if (headerAccessor.getCommand() != DISCONNECT) {
-            redisTemplate.opsForHash().put("SESSION", session, redisRoomId);
-            String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
-            String email = jwtUtils.getUid(tokenStompHeader);
-
-            handleMessage(headerAccessor.getCommand(), headerAccessor, email);
-        }
-        else {
-            redisRoomId = (String) redisTemplate.opsForHash().get("SESSION", session);
-
-        }
+        String session = (String) headerAccessor.getHeader("simpSessionId");
+        handleMessage(headerAccessor.getCommand(), headerAccessor, session);
 
         return message;
-
     }
-    //7623ab78-20d1-97dd-22de-a1ead8892875
-    //simpSessionId -> 7623ab78-20d1-97dd-22de-a1ead8892875
-    //simpSessionId -> 7623ab78-20d1-97dd-22de-a1ead8892875
 
-    //simpSessionId -> 7a0c4eb7-fcf4-507f-4a63-dd96b6571a92
-    //simpSessionId -> 7a0c4eb7-fcf4-507f-4a63-dd96b6571a92
-    private void handleMessage(StompCommand stompCommand, StompHeaderAccessor headerAccessor, String email) {
+    private void handleMessage(StompCommand stompCommand, StompHeaderAccessor headerAccessor, String session) {
         switch (stompCommand) {
 
             case CONNECT:
-                connectToChatRoom(headerAccessor, email);
+                // 토큰 없을 때 예외처리
+                verifyAccessToken(headerAccessor);
+                connectToChatRoom(headerAccessor, session);
                 break;
             case SUBSCRIBE:
                 break;
-            case SEND:
-                verifyAccessToken(headerAccessor);
+            case DISCONNECT:
+                disConnectToChatRoom(session);
                 break;
         }
     }
@@ -80,6 +72,7 @@ class StompHandler implements ChannelInterceptor {
     private boolean verifyAccessToken(StompHeaderAccessor headerAccessor) {
         String token = headerAccessor.getFirstNativeHeader("Authentication");
         String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+//        jwtUtils.validateToken(tokenStompHeader);
         if (jwtUtils.validateToken(tokenStompHeader) == false) {
             log.info("토큰값이 없습니다.");
             return false;
@@ -87,9 +80,16 @@ class StompHandler implements ChannelInterceptor {
         return true;
     }
 
-    private void connectToChatRoom(StompHeaderAccessor headerAccessor, String email) {
+    private void connectToChatRoom(StompHeaderAccessor headerAccessor, String session) {
         ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
         String stringRedisRoomID = redisRoomId.toString();
+        String token = headerAccessor.getFirstNativeHeader("Authentication");
+        String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+        String email = jwtUtils.getUid(tokenStompHeader);
+
+
+        hashOperations.put(session, "RedisRoomId", stringRedisRoomID);
+        hashOperations.put(session, "email", email);
 
         SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
         setOperations.add(stringRedisRoomID + "set", email);
@@ -97,7 +97,10 @@ class StompHandler implements ChannelInterceptor {
         chatMessageService.updateReadCount(stringRedisRoomID, size);
     }
 
-    private void disConnectToChatRoom(String stringRedisRoomID, String email) {
-        redisTemplate.opsForSet().remove(stringRedisRoomID + "set", email);
+    private void disConnectToChatRoom(String session) {
+
+        String redisRoomId = (String) redisTemplate.opsForHash().get(session, "RedisRoomId");
+        String email = (String) redisTemplate.opsForHash().get(session, "email");
+        redisTemplate.opsForSet().remove(redisRoomId + "set", email);
     }
 }

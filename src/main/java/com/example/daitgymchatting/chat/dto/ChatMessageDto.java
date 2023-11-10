@@ -1,7 +1,6 @@
 package com.example.daitgymchatting.chat.dto;
 
 import com.example.daitgymchatting.chat.entity.ChatMessage;
-import com.example.daitgymchatting.chat.entity.MessageType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -28,7 +27,6 @@ public class ChatMessageDto {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
     private Duration timeDifference;
-    private MessageType messageType;
 
 
     public ChatMessageDto(ChatMessage chatMessage) {
