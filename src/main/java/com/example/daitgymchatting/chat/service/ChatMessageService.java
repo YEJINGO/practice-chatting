@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -83,29 +84,32 @@ public class ChatMessageService {
         updateReadCount(roomId, size);
 
         List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
-
         List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
 
-        if (redisMessageList == null || redisMessageList.isEmpty() || redisMessageList.size() < 10) {
+        if (redisMessageList == null || redisMessageList.isEmpty() || redisMessageList.size() < 100) {
             List<ChatMessage> dbMessageList = chatMessageRepository.findTop100ByRedisRoomIdOrderByCreatedAtAsc(roomId);
-            // 레디스 메세지 모두 삭제
-            redisTemplateMessage.delete(roomId);
-            for (ChatMessage chatMessage : dbMessageList) {
-                ChatMessageDto chatMessageDto = new ChatMessageDto(chatMessage);
-                chatMessageDtos.add(chatMessageDto);
 
+            // 레디스에 값이 일부만 있으면 -> 있는만큼 set, 추가되는건 rightPush
+            for (int i = 0; i < redisMessageList.size(); i++) {
+                ChatMessageDto chatMessageDto = new ChatMessageDto(dbMessageList.get(i));
+                chatMessageDtos.add(chatMessageDto);
+                redisTemplateMessage.opsForList().set(roomId, i, chatMessageDto);
+            }
+            for (int i = redisMessageList.size(); i < dbMessageList.size(); i++) {
+                ChatMessageDto chatMessageDto = new ChatMessageDto(dbMessageList.get(i));
+                chatMessageDtos.add(chatMessageDto);
                 redisTemplateMessage.opsForList().rightPush(roomId, chatMessageDto);
             }
-        } else {
+
+        } else { // 레디스에 값이 충분히 있으면 -> set
             for (int i = 0; i < redisMessageList.size(); i++) {
-                if (redisMessageList.get(i).getReadCount() == 1 && size ==2) {
+                if (redisMessageList.get(i).getReadCount() == 1 && size == 2) {
                     redisMessageList.get(i).setReadCount(0);
                     redisTemplateMessage.opsForList().set(roomId, i, redisMessageList.get(i));
                 }
             }
             chatMessageDtos.addAll(redisMessageList);
         }
-
         return chatMessageDtos;
     }
 
