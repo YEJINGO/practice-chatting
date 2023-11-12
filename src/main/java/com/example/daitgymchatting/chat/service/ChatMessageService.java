@@ -12,11 +12,13 @@ import com.example.daitgymchatting.member.repo.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -76,13 +78,18 @@ public class ChatMessageService {
     public List<ChatMessageDto> loadMessage(String roomId, Long memberId) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
 
+        SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
+        Long size = setOperations.size(roomId + "set");
+        updateReadCount(roomId, size);
+
         List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
 
         List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
 
         if (redisMessageList == null || redisMessageList.isEmpty() || redisMessageList.size() < 10) {
             List<ChatMessage> dbMessageList = chatMessageRepository.findTop100ByRedisRoomIdOrderByCreatedAtAsc(roomId);
-
+            // 레디스 메세지 모두 삭제
+            redisTemplateMessage.delete(roomId);
             for (ChatMessage chatMessage : dbMessageList) {
                 ChatMessageDto chatMessageDto = new ChatMessageDto(chatMessage);
                 chatMessageDtos.add(chatMessageDto);
@@ -91,7 +98,7 @@ public class ChatMessageService {
             }
         } else {
             for (int i = 0; i < redisMessageList.size(); i++) {
-                if (redisMessageList.get(i).getReadCount() == 1) {
+                if (redisMessageList.get(i).getReadCount() == 1 && size ==2) {
                     redisMessageList.get(i).setReadCount(0);
                     redisTemplateMessage.opsForList().set(roomId, i, redisMessageList.get(i));
                 }
@@ -102,28 +109,6 @@ public class ChatMessageService {
         return chatMessageDtos;
     }
 
-//        // 수정된 요소를 가지는 새로운 리스트를 생성
-//        List<ChatMessageDto> modifiedChatMessageDtos = new ArrayList<>(chatMessageDtos);
-//
-//        Iterator<ChatMessageDto> iterator = modifiedChatMessageDtos.iterator();
-//        while (iterator.hasNext()) {
-//            ChatMessageDto chatMessageDto = iterator.next();
-//            Long chatMessageId = chatMessageDto.getChatMessageId();
-//            String redisRoomId = chatMessageDto.getRedisRoomId();
-//            ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId).orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND_ROOM));
-//            if (!memberNickName.equals(chatMessageDto.getSender())) {
-//                if (chatMessageDto.getReadCount() == 1) {
-//                    chatMessageDto.setReadCount(chatMessageDto.getReadCount() - 1);
-//                    // TODO redis 저장, rdb 저장
-//
-//                    redisTemplateMessage.opsForList().set(redisRoomId, chatMessageDtos.indexOf(chatMessageDto), chatMessageDto);
-//                    chatMessage.setReadCount(0);
-//                    chatMessageRepository.save(chatMessage);
-//                }
-//            }
-//        }
-
-
     /**
      * 최신 메세지 가져오기
      * 1. Redis에 값이 있으면 Redis에서 값 가져오기
@@ -132,12 +117,8 @@ public class ChatMessageService {
     public ChatMessageDto latestMessage(String roomId) {
 
         ChatMessageDto latestMessage = redisTemplateMessage.opsForList().index(roomId, -1);
-
-
         if (latestMessage == null) {
             ChatMessage dbLatestMessage = chatMessageRepository.findTop1ByRedisRoomIdOrderByCreatedAtDesc(roomId);
-
-
             if (dbLatestMessage != null) {
                 latestMessage = new ChatMessageDto(dbLatestMessage);
                 redisTemplateMessage.opsForList().rightPush(roomId, latestMessage);
@@ -163,26 +144,26 @@ public class ChatMessageService {
             }
         }
     }
+
+//    public void updateAllReadCountZero(String stringRedisRoomID,String email) {
+//        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+//        List<ChatMessage> chatMessages = chatMessageRepository.findAllByRedisRoomId(stringRedisRoomID);
+//        for (ChatMessage chatMessage: chatMessages) {
+//            if (!Objects.equals(chatMessage.getSender(), member.getNickName())) {
+//                chatMessage.setReadCount(0);
+//                chatMessageRepository.save(chatMessage);
+//
+//                ChatMessageDto chatMessageDto = redisTemplateMessage.opsForValue().get(stringRedisRoomID);
+//                if (chatMessageDto != null && Objects.equals(member.getNickName(), chatMessageDto.getSender())) {
+//                    chatMessageDto.setReadCount(0);
+//                    redisTemplateMessage.opsForValue().set(stringRedisRoomID, chatMessageDto);
+//                }
+//
+//            }
+//        }
+//
+//
+//    }
 }
 
-//    public List<ChatMessageDto> loadMessage(String roomId){
-//
-//        List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
-//
-//        List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
-//
-//        if (redisMessageList == null || redisMessageList.isEmpty()) {
-//            List<ChatMessage> dbMessageList = chatMessageRepository.findTop100ByRedisRoomIdOrderByCreatedAtAsc(roomId);
-//
-//            for (ChatMessage chatMessage : dbMessageList) {
-//                ChatMessageDto chatMessageDto = new ChatMessageDto(chatMessage);
-//                chatMessageDtos.add(chatMessageDto);
-//                redisTemplateMessage.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));      // 직렬화
-//                redisTemplateMessage.opsForList().rightPush(roomId, chatMessageDto);
-//            }
-//        } else {
-//            chatMessageDtos.addAll(redisMessageList);
-//        }
-//        return chatMessageDtos;
-//    }
 

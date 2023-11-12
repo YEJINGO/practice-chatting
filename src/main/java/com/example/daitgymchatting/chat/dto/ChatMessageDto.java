@@ -1,6 +1,7 @@
 package com.example.daitgymchatting.chat.dto;
 
 import com.example.daitgymchatting.chat.entity.ChatMessage;
+import com.example.daitgymchatting.chat.entity.MessageType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class ChatMessageDto {
-
+    private String messageType;
     private Long chatMessageId;
     private String sender;
     private String message;
@@ -35,7 +36,7 @@ public class ChatMessageDto {
         this.sender = chatMessage.getSender();
         this.message = chatMessage.getMessage();
         this.readCount = chatMessage.getReadCount();
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = chatMessage.getCreatedAt();
     }
 
 

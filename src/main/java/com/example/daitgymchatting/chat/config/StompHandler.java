@@ -62,6 +62,7 @@ class StompHandler implements ChannelInterceptor {
                 connectToChatRoom(headerAccessor, session);
                 break;
             case SUBSCRIBE:
+//                updateReadCount(headerAccessor,session);
                 break;
             case DISCONNECT:
                 disConnectToChatRoom(session);
@@ -69,15 +70,19 @@ class StompHandler implements ChannelInterceptor {
         }
     }
 
-    private boolean verifyAccessToken(StompHeaderAccessor headerAccessor) {
+//    private void updateReadCount(StompHeaderAccessor headerAccessor, String session) {
+//        ChannelTopic redisRoomId = ChannelTopic.of(headerAccessor.getFirstNativeHeader("RedisRoomId"));
+//        String stringRedisRoomID = redisRoomId.toString();
+//        String token = headerAccessor.getFirstNativeHeader("Authentication");
+//        String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
+//        String email = jwtUtils.getUid(tokenStompHeader);
+//        chatMessageService.updateAllReadCountZero(stringRedisRoomID,email);
+//    }
+
+    private void verifyAccessToken(StompHeaderAccessor headerAccessor) {
         String token = headerAccessor.getFirstNativeHeader("Authentication");
         String tokenStompHeader = jwtUtils.getTokenStompHeader(token);
-//        jwtUtils.validateToken(tokenStompHeader);
-        if (jwtUtils.validateToken(tokenStompHeader) == false) {
-            log.info("토큰값이 없습니다.");
-            return false;
-        }
-        return true;
+        jwtUtils.validateToken(tokenStompHeader);
     }
 
     private void connectToChatRoom(StompHeaderAccessor headerAccessor, String session) {
@@ -93,8 +98,7 @@ class StompHandler implements ChannelInterceptor {
 
         SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
         setOperations.add(stringRedisRoomID + "set", email);
-        Long size = setOperations.size(stringRedisRoomID + "set");
-        chatMessageService.updateReadCount(stringRedisRoomID, size);
+
     }
 
     private void disConnectToChatRoom(String session) {

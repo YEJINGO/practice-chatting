@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -27,7 +28,6 @@ public class ChatMessageController {
     private final ChatRoomService chatRoomService;
     private final ChatMessageService messageService;
 
-    private final RedisTemplate<String, ChatMessageDto> redisTemplateMessage;
 
     /**
      * websocket "/pub/chat/message/" 로 들어오는 메시징을 처리한다.
@@ -38,10 +38,12 @@ public class ChatMessageController {
         log.info("채팅 메시지");
         chatRoomService.enterChatRoom(chatMessageDto.getRedisRoomId());
         chatMessageDto.setCreatedAt(LocalDateTime.now());
+        ChatMessageDto cmd = chatMessageDto;
 
         ChannelTopic topic = chatRoomService.getTopic(chatMessageDto.getRedisRoomId());
-        ChatMessageDto cmd = messageService.save(chatMessageDto);
-
+        if (!Objects.equals(chatMessageDto.getMessageType(), "ENTER")) {
+             cmd = messageService.save(chatMessageDto);
+        }
         redisPublisher.publish(topic, cmd);
     }
 

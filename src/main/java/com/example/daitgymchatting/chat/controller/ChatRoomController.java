@@ -25,7 +25,8 @@ public class ChatRoomController {
      * 채팅방 생성
      */
     @PostMapping("/rooms")
-    public ChatRoomResponse createRoom(@RequestParam Long memberId, @RequestBody ChatMessageRequestDto chatMessageRequestDto) {
+    public ChatRoomResponse createRoom(@RequestParam Long memberId,
+                                       @RequestBody ChatMessageRequestDto chatMessageRequestDto) {
         return chatService.createChatRoom(memberId, chatMessageRequestDto);
     }
 

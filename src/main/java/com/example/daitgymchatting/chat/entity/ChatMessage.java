@@ -31,13 +31,12 @@ public class ChatMessage {
     private int readCount;
 
 
-
     @ManyToOne
     @JoinColumn(name = "roomId")
     private ChatRoom chatRoom;
 
     @Builder
-    public ChatMessage( String sender, ChatRoom chatRoom, String message, String redisRoomId,int readCount) {
+    public ChatMessage(String sender, ChatRoom chatRoom, String message, String redisRoomId, int readCount) {
         super();
         this.sender = sender;
         this.chatRoom = chatRoom;
