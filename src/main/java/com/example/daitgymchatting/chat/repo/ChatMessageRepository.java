@@ -16,5 +16,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     ChatMessage findByRedisRoomIdAndId(String redisRoomId, Long chatMessageId);
 
 
-    List<ChatMessage> findAllByRedisRoomId(String redisRoomId);
+    List<ChatMessage> findAllByRedisRoomIdAndReadCountAndSenderNot(String redisRoomId, int readCount, String nickName);
 }

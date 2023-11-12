@@ -81,7 +81,7 @@ public class ChatMessageService {
 
         SetOperations<String, Object> setOperations = redisTemplate.opsForSet();
         Long size = setOperations.size(roomId + "set");
-        updateReadCount(roomId, size);
+        updateReadCount(roomId, member);
 
         List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
         List<ChatMessageDto> redisMessageList = redisTemplateMessage.opsForList().range(roomId, 0, 99);
@@ -131,21 +131,14 @@ public class ChatMessageService {
         return latestMessage;
     }
 
-    public void updateReadCount(String redisRoomId, Long size) {
-        List<ChatMessage> chatMessages = chatMessageRepository.findAllByRedisRoomId(redisRoomId);
-        if (!chatMessages.isEmpty()) {
-            if (size == 2) {
-                for (ChatMessage chatMessage : chatMessages) {
-                    chatMessage.setReadCount(0);
-                    chatMessageRepository.save(chatMessage);
-                }
-            } else {
-                for (ChatMessage chatMessage : chatMessages) {
-                    chatMessage.setReadCount(1);
-                    chatMessageRepository.save(chatMessage);
+    // loadMessage 할 때 내가 안읽은 메세지 readCount 0으로 변경
+    public void updateReadCount(String redisRoomId, Member member) {
+        String nickName = member.getNickName();
+        List<ChatMessage> chatMessages = chatMessageRepository.findAllByRedisRoomIdAndReadCountAndSenderNot(redisRoomId, 1, nickName);
 
-                }
-            }
+        for (ChatMessage chatMessage : chatMessages) {
+            chatMessage.setReadCount(0);
+            chatMessageRepository.save(chatMessage);
         }
     }
 
